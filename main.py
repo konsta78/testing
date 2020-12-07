@@ -7,7 +7,9 @@ DATABASE = "tests.sqlite3"
 
 if __name__ == "__main__":
     db = DataBase(DATABASE)
-    user_token = f.authorization(db)
-    if user_token:
+    user_token, user_name = f.authorization(db)
+    while user_token:
         print(user_token)
+        break
+    f.choose_test(db)
     db.database_close()

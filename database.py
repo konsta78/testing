@@ -48,7 +48,7 @@ class DataBase:
         """
         self.cursor.execute("""
                     SELECT * 
-                    FROM users 
+                    FROM users
                     ORDER BY id
                     """)
         data = self.cursor.fetchall()
@@ -66,7 +66,10 @@ class DataBase:
                                 [(None, new_user, new_password)])
 
     def create_tests_database(self):
-        self.cursor.execute(""" DROP TABLE tests """)
+        try:
+            self.cursor.execute(""" DROP TABLE tests """)
+        except sqlite3.OperationalError:
+            print("Отсутствует база данных пользователей")
         self.cursor.execute("""
                     CREATE TABLE IF NOT EXISTS tests(
                     id integer,
@@ -93,13 +96,12 @@ class DataBase:
 
         self.cursor.executemany(""" INSERT INTO tests
                             VALUES(?, ?, ?, ?) """,
-                            [(j, test_name[j], '+'.join(questions[j]), '+'.join(answers[j][i])) for i in range(3) for j in range(2)])
-
+                            [(k, test_name[k], questions[k][i], '+'.join(answers[k][i])) for i in range(3) for k in range(2)])
         self.database_connect.commit()
 
-    def read_tests(self):
-        self.cursor.execute("""
-                            SELECT DISTINCT answers
+    def read_name_tests(self, filter):
+        self.cursor.execute(f"""
+                            SELECT DISTINCT {filter}
                             FROM tests
                             ORDER BY id
                             """)
@@ -118,10 +120,9 @@ if __name__ == "__main__":
     db.create_users_database()
     db.create_tests_database()
     for user in db.read_users():
-        print(user[1])
-    for test in db.read_tests():
-        t = test[0].split('+')
-        print(t)
+        print(*user)
+    for test in db.read_name_tests('id, name, questions, answers'):
+        print(test)
 
     print(db.read_users())
     db.database_close()

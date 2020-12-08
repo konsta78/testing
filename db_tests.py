@@ -95,7 +95,7 @@ if __name__ == "__main__":
     db = TestsDataBase("tests.sqlite3")
     db.create_tests()
 
-    for test in db.read_data_from_tests('topic'):
+    for test in db.read_data_from_tests('id, topic'):
         print(test[0])
 
     db.database_close()

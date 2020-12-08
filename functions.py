@@ -78,9 +78,3 @@ def authorization(database):
             user_id = 0
 
     return user_id, user_name
-
-
-def choose_test(database):
-    print(f"Выберите тему для тестирования:")
-    for test in database.read_name_tests('id, name'):
-        print(f"{test[0]+1}. {test[1]}")

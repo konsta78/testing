@@ -67,7 +67,7 @@ class UsersDataBase:
         Добавление нового пользователя в БД
         :param new_user: имя нового пользователя
         :param new_password: пароль нового пользователя
-        :return: тестовый режим - запись в БД не происходит (дабы не захломлять)
+        :return: тестовый режим - запись в БД не происходит (дабы не захламлять)
         """
         self.cursor.executemany(""" INSERT INTO users
                             VALUES(?, ?, ?) """, [(None, new_user, new_password)])

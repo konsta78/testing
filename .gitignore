@@ -6,7 +6,7 @@ __pycache__/
 *.zip
 *.json
 *.sqlite3
-test.py
+Tests/test_db_users.py
 
 # C extensions
 *.so

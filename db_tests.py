@@ -4,6 +4,9 @@
 
 import sqlite3
 from sqlite3 import Error
+import random
+import copy
+import questionnaire as q
 
 
 class TestsDataBase:
@@ -16,14 +19,24 @@ class TestsDataBase:
             print(f"Ошибка {Error} соединения с базой данных")
         self.cursor = self.database_connect.cursor()
 
-    def create_tests(self):
-
+    def check_tests_db(self):
+        """
+        Проверка наличия данных в таблицах с вопросами и ответами
+        :return: False, если таблицы пусты
+        """
         tables = ["answers", "questions"]
         for table in tables:
-            try:
-                self.cursor.execute(""" DROP TABLE """ + table)
-            except sqlite3.OperationalError:
-                print("Отсутствует база данных пользователей")
+            query = f"SELECT name " \
+                    "FROM sqlite_master " \
+                    f"WHERE type='table' AND name='{table}'"
+            self.cursor = self.database_connect.execute(query)
+            result = self.cursor.fetchone()
+        return result
+
+    def create_tests(self):
+        """
+        Создание базы данных с тестами. Две таблицы: 'answers' и 'questions'.
+        """
 
         create_tests_table_sql = """
                     CREATE TABLE IF NOT EXISTS questions(
@@ -42,23 +55,8 @@ class TestsDataBase:
         self.cursor.execute(create_tests_table_sql)
         self.cursor.execute(create_answers_table_sql)
 
-        questionnaire = [
-            ("География", "Какое государство самое маленькое в мире?",
-                ["Ватикан", "Лихтенштейн", "Монако", "Андорра"], 0),
-            ("География", "Назовите наибольшее по площади озеро Америки",
-                ["Верхнее", "Гурок", "Мичиган", "Онтарио"], 0),
-            ("География", "Чья экспедиция совершила первое кругосветное путешествие?",
-                ["Магеллана", "Врангеля", "Лисянского", "Кука"], 0),
-            ("Путешествия", "Какой из перечисленных вулканов является действующим?",
-                ["Везувий", "Килиманджаро", "Карадаг", "Кетой"], 0),
-            ("Путешествия", "Когда отмечается всемирный день туризма?",
-                ["27 сентября", "1 июня", "6 июля", "15 мая"], 0),
-            ("Путешествия", "Как называют людей, отдыхающих на курорте без путевки?",
-                ["Дикари", "Туземцы", "Варвары", "Отшельники"], 0)
-        ]
-
         counter = 1
-        for item in questionnaire:
+        for item in q.questionnaire:
             insert_into_questions = """INSERT INTO questions VALUES(?, ?, ?)"""
             self.cursor.execute(insert_into_questions, [counter, item[0], item[1]])
 
@@ -74,13 +72,54 @@ class TestsDataBase:
             counter += 1
         self.database_connect.commit()
 
-    def read_data_from_tests(self, filter):
-        # select data: select * from questions q inner join answers a on q.id = a.questionId;
+    def shake_answers(self):
+        old_questionnaire = copy.deepcopy(q.questionnaire)
+        for id, answer in enumerate(q.questionnaire):
+            random.shuffle(answer[2])
+            for k, item in enumerate(answer[2]):
+                if item == old_questionnaire[id][2][0]:
+                    answer[3] = k
+        # self.cursor.execute("""INSERT INTO answers VALUES(?, ?, ?, ?)""")
+        # self.database_connect.commit()
 
+    def get_topics(self, filter):
+        """
+        Получение списка тем для тестирования из БД по фильтру запроса
+        :param filter: поле в БД
+        :return: кортеж с данными
+        """
         self.cursor.execute(f"""
                             SELECT DISTINCT {filter} 
                             FROM questions
                             """)
+        data = self.cursor.fetchall()
+        return data
+
+    def get_questions(self, topic):
+        """
+        Получение списка вопросов по выбранной теме тестирования
+        :param topic: тема для тестирования
+        :return: кортеж с данными
+        """
+        self.cursor.execute(f"""
+                            SELECT question 
+                            FROM questions
+                            WHERE topic=?
+                            """, (topic,))
+        data = self.cursor.fetchall()
+        return data
+
+    def get_answers_for_question(self, question):
+        """
+        Получения списка вариантов ответа для текущего вопроса
+        :param question: вопрос теста
+        :return: кортеж с данными
+        """
+        self.cursor.execute(f"""
+                            SELECT * 
+                            FROM questions q INNER JOIN answers a 
+                            ON q.id = a.questionId AND q.question=?;
+                            """, (question, ))
         data = self.cursor.fetchall()
         return data
 
@@ -94,8 +133,14 @@ class TestsDataBase:
 if __name__ == "__main__":
     db = TestsDataBase("tests.sqlite3")
     db.create_tests()
-
-    for test in db.read_data_from_tests('id, topic'):
-        print(test[0])
+    db.shake_answers()
+    # for item in db.get_topics('topic'):
+    #     print(item[0])
+    # for test in db.get_questions('Путешествия'):
+    #     print(test[0])
+    for test in db.get_answers_for_question('Какое государство самое маленькое в мире?'):
+        print(test)
+    for test in db.get_answers_for_question('Когда отмечается всемирный день туризма?'):
+        print(test)
 
     db.database_close()

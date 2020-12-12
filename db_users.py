@@ -16,6 +16,18 @@ class UsersDataBase:
             print(f"Ошибка {Error} соединения с базой данных")
         self.cursor = self.database_connect.cursor()
 
+    def check_users_db(self):
+        """
+        Проверка наличия данных в таблице пользователей
+        :return: False, если таблица пуста
+        """
+        query = "SELECT name " \
+                "FROM sqlite_master " \
+                "WHERE type='table' AND name='users'"
+        self.cursor = self.database_connect.execute(query)
+        result = self.cursor.fetchone()
+        return result
+
     def create_users(self):
         """
         Создание таблицы пользователей в базе данных
@@ -23,10 +35,6 @@ class UsersDataBase:
         login - имя пользователя
         password - пароль пользователя
         """
-        try:
-            self.cursor.execute(""" DROP TABLE users """)
-        except sqlite3.OperationalError:
-            print("Отсутствует база данных пользователей")
 
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS users(
@@ -44,7 +52,7 @@ class UsersDataBase:
     def read_users(self):
         """
         Чтение из БД сведений о пользователях
-        :return: список кортежей с информацией о пользователе (id, login, password)
+        :return: кортеж с информацией о пользователе (id, login, password)
         """
         self.cursor.execute("""
                     SELECT * 

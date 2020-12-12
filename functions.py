@@ -17,6 +17,9 @@ def input_command_menu(count, message, answer=0):
             answer = int(input(message))
         except ValueError:
             print("Неверный формат ввода!")
+        else:
+            if answer not in range(1, count):
+                print("Такого пункта меню не существует.")
     return answer
 
 
@@ -92,13 +95,43 @@ def choose_test(database, user_name, counter=1):
     :param database: база данных с тестами
     :param user_name: имя авторизованного пользователя
     :param counter: счетчик количества тем для тестирования
-    :return: пункт меню
+    :return: topic: тема тестирования (либо выход из программы)
     """
-    topics = database.read_data_from_tests('topic')
+    topics = database.get_topics('topic')
     message = f"\n{user_name}, выберите тему для тестирования:\n"
+
     for topic in topics:
         message += f"{counter}. {topic[0]}\n"
         counter += 1
     message += f"{counter}. Выйти\n--->"
-    answer = input_command_menu(counter+1, message)
-    return answer
+
+    topic = input_command_menu(counter+1, message)
+    if topic == counter:
+        topic = None
+    else:
+        topic = topics[topic-1][0]
+    return topic
+
+
+def testing(database, topic, q_counter=1):
+    """
+    Проведение тестирования по выбранной теме
+    :param database: база данных с тестами
+    :param topic: выбранная тема для тестирования
+    :param q_counter: счетчик кол-ва вопросов для тестирования
+    :return: results: список ответов
+    """
+    results = []
+    for question in database.get_questions(topic):
+        message = f"\nВопрос №{q_counter}\n"
+        message += f"{question[0]}\n"
+        q_counter += 1
+
+        for answers in database.get_answers_for_question(question[0]):
+            # print(answers)
+            message += f"{answers[3]}. {answers[4]}\n"
+        message += "-->"
+
+        answer = input_command_menu(answers[3]+1, message)
+        results.append(answer)
+    return results

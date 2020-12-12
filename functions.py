@@ -2,6 +2,7 @@
 Функции для работы с БД и сервисом тестирования
 """
 import messages as m
+import random
 
 
 def input_command_menu(count, message, answer=0):
@@ -119,19 +120,59 @@ def testing(database, topic, q_counter=1):
     :param database: база данных с тестами
     :param topic: выбранная тема для тестирования
     :param q_counter: счетчик кол-ва вопросов для тестирования
-    :return: results: список ответов
+    :return: results: словарь с ответами пользователя {"номер вопроса": "ответ пользователя"}
     """
-    results = []
-    for question in database.get_questions(topic):
+    def shake_answers():
+        """
+        Функция для случайного отображения вариантов ответов на вопрос теста
+        :return: список вариантов ответов
+        """
+        answers_list = database.get_answers_for_question(question[0])
+        answers_list = [answers_list[i][0] for i in range(0, len(answers_list))]
+        random.shuffle(answers_list)
+        return answers_list
+
+    results = {}
+    questions = database.get_questions(topic)
+
+    for question in questions:
         message = f"\nВопрос №{q_counter}\n"
         message += f"{question[0]}\n"
         q_counter += 1
+        answers_list = shake_answers()
 
-        for answers in database.get_answers_for_question(question[0]):
-            # print(answers)
-            message += f"{answers[3]}. {answers[4]}\n"
+        for count, answer in enumerate(answers_list):
+            message += f"{count+1}. {answer}\n"
         message += "-->"
 
-        answer = input_command_menu(answers[3]+1, message)
-        results.append(answer)
+        answer = input_command_menu(len(answers_list)+1, message)
+        results[q_counter-1] = answers_list[answer-1]
     return results
+
+
+def check_results(database, topic, results):
+    """
+    Проверка ответов пользователя
+    :param database: база данных с тестами
+    :param topic: выбранная тема для тестирования
+    :param results: словарь с ответами пользователя {"номер вопроса": "ответ пользователя"}
+    :return: кол-во правильных ответов
+    """
+    user_result = 0
+    right_answers = database.get_right_answers(topic)
+    right_answers = [right_answers[i][0] for i in range(0, len(right_answers))]
+    for index, answer in enumerate(right_answers):
+        if answer == results.get(index+1):
+            user_result += 1
+    return user_result
+
+
+def show_result(user_name, topic, user_result):
+    """
+    Отображения результатов тестирования
+    :param user_name: имя пользователя
+    :param topic: выбранная тема для тестирования
+    :param user_result: словарь с ответами пользователя {"номер вопроса": "ответ пользователя"}
+    """
+    print(f"Уважаемый {user_name}!\n"
+          f"Тест по теме '{topic}' завершен и ваш результат: {user_result} правильных ответов.")

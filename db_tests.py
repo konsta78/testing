@@ -4,8 +4,6 @@
 
 import sqlite3
 from sqlite3 import Error
-import random
-import copy
 import questionnaire as q
 
 
@@ -72,16 +70,6 @@ class TestsDataBase:
             counter += 1
         self.database_connect.commit()
 
-    def shake_answers(self):
-        old_questionnaire = copy.deepcopy(q.questionnaire)
-        for id, answer in enumerate(q.questionnaire):
-            random.shuffle(answer[2])
-            for k, item in enumerate(answer[2]):
-                if item == old_questionnaire[id][2][0]:
-                    answer[3] = k
-        # self.cursor.execute("""INSERT INTO answers VALUES(?, ?, ?, ?)""")
-        # self.database_connect.commit()
-
     def get_topics(self, filter):
         """
         Получение списка тем для тестирования из БД по фильтру запроса
@@ -116,10 +104,20 @@ class TestsDataBase:
         :return: кортеж с данными
         """
         self.cursor.execute(f"""
-                            SELECT * 
+                            SELECT a.answer 
                             FROM questions q INNER JOIN answers a 
-                            ON q.id = a.questionId AND q.question=?;
+                            ON q.id = a.questionId AND q.question=?
+                            ORDER BY a.id;
                             """, (question, ))
+        data = self.cursor.fetchall()
+        return data
+
+    def get_right_answers(self, topic):
+        self.cursor.execute(f"""
+                            SELECT a.answer
+                            FROM questions q INNER JOIN answers a 
+                            ON q.id = a.questionId AND q.topic=? AND a.is_right=1;
+                            """, (topic,))
         data = self.cursor.fetchall()
         return data
 
@@ -132,15 +130,23 @@ class TestsDataBase:
 
 if __name__ == "__main__":
     db = TestsDataBase("tests.sqlite3")
-    db.create_tests()
-    db.shake_answers()
+    if db.check_tests_db() is None:
+        db.create_tests()
+    # db.shake_answers()
     # for item in db.get_topics('topic'):
     #     print(item[0])
     # for test in db.get_questions('Путешествия'):
-    #     print(test[0])
-    for test in db.get_answers_for_question('Какое государство самое маленькое в мире?'):
-        print(test)
-    for test in db.get_answers_for_question('Когда отмечается всемирный день туризма?'):
-        print(test)
+    #     print(test)
+    # answers = db.get_answers_for_question('Какое государство самое маленькое в мире?')
+    # print(answers)
+    # answers = [answers[i][0] for i in range(0, len(answers))]
+    # print(answers)
+
+    # for test in db.get_answers_for_question('Какое государство самое маленькое в мире?'):
+    #     print(test[4])
+    right_answers = db.get_right_answers('География')
+    print(right_answers)
+    # for test in db.get_right_answers('География'):
+    #     print(test)
 
     db.database_close()

@@ -15,13 +15,14 @@ if __name__ == "__main__":
     if db_tests.check_tests_db() is None:
         db_tests.create_tests()
 
-    # user_token, user_name = f.authorization(db_users)
-    user_token, user_name = 1, 'test_user'
+    user_token, user_name = f.authorization(db_users)
 
     if user_token:
         topic = f.choose_test(db_tests, user_name)
         if topic:
             results = f.testing(db_tests, topic)
-            print(results)
+            user_result = f.check_results(db_tests, topic, results)
+            f.show_result(user_name, topic, user_result)
+
     db_users.database_close()
     db_tests.database_close()

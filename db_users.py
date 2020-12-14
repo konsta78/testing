@@ -19,7 +19,7 @@ class UsersDataBase:
     def check_users_db(self):
         """
         Проверка наличия данных в таблице пользователей
-        :return: False, если таблица пуста
+        :return: None, если таблица пуста
         """
         query = "SELECT name " \
                 "FROM sqlite_master " \
@@ -52,7 +52,7 @@ class UsersDataBase:
     def read_users(self):
         """
         Чтение из БД сведений о пользователях
-        :return: кортеж с информацией о пользователе (id, login, password)
+        :return: список кортежей с информацией о пользователе (id, login, password)
         """
         self.cursor.execute("""
                     SELECT * 
@@ -67,10 +67,11 @@ class UsersDataBase:
         Добавление нового пользователя в БД
         :param new_user: имя нового пользователя
         :param new_password: пароль нового пользователя
-        :return: тестовый режим - запись в БД не происходит (дабы не захламлять)
         """
         self.cursor.executemany(""" INSERT INTO users
                             VALUES(?, ?, ?) """, [(None, new_user, new_password)])
+
+        self.database_connect.commit()
 
     def database_close(self):
         """
@@ -81,9 +82,12 @@ class UsersDataBase:
 
 if __name__ == "__main__":
     db = UsersDataBase("users.sqlite3")
-    db.create_users()
+    if db.check_users_db() is None:
+        db.create_users()
 
-    for user in db.read_users():
-        print(user[1])
+    # for user in db.read_users():
+    #     print(user[1])
+    print(db.read_users())
+
 
     db.database_close()

@@ -1,15 +1,12 @@
 from db_users import UsersDataBase
 from db_tests import TestsDataBase
 import functions as f
-
-
-DATABASE_USERS = "users.sqlite3"
-DATABASE_TESTS = "tests.sqlite3"
+import config as c
 
 
 if __name__ == "__main__":
-    db_users = UsersDataBase(DATABASE_USERS)
-    db_tests = TestsDataBase(DATABASE_TESTS)
+    db_users = UsersDataBase(c.DATABASE_USERS)
+    db_tests = TestsDataBase(c.DATABASE_TESTS)
     if db_users.check_users_db() is None:
         db_users.create_users()
     if db_tests.check_tests_db() is None:
